@@ -34,6 +34,7 @@
         <li><a href="W06_loopProduct.php">showproduct</a></li>
         <li><a href="W07_01_connectDB.php">connect database</a></li>
         <li><a href="W07_02_fecthData.php">fecth data</a></li>
+        <li><a href="W08_01_ProdectFromData.php">Product data</a></li>
 
     </ul>
 
