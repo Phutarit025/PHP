@@ -1,5 +1,6 @@
 <?php
 require_once 'config.php';
+
 $error = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -14,11 +15,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error[] = "อีเมลไม่ถูกต้อง";
     } elseif ($password !== $cpassword) {
-        $error[] = "รหัสผ่านไม่ตรงกัน";
+        $error[] = "รหัสผ่านและยืนยันรหัสผ่านไม่ตรงกัน";
     } else {
         $sql = "SELECT * FROM users WHERE username = ? OR email = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$username, $email]);
+
         if ($stmt->rowCount() > 0) {
             $error[] = "ชื่อผู้ใช้หรืออีเมลนี้ถูกใช้ไปแล้ว";
         }
@@ -26,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($error)) {
         $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-        $sql = "INSERT INTO users(username, full_name, email, password, role) VALUES (?, ?, ?, ?, 'member')";
+        $sql = "INSERT INTO users(username,full_name,email,password,role) VALUES (?,?,?,?,'member')";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$username, $fname, $email, $hashedPassword]);
 
@@ -35,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="th">
 
@@ -42,56 +45,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
-            height: 100vh;
+            background: #d0ebff;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-family: 'Sarabun', sans-serif;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
 
-        .register-card {
-            background: #fff;
-            border-radius: 15px;
-            padding: 2rem;
-            max-width: 500px;
+        .form-box {
+            background: #ffffff;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             width: 100%;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+            max-width: 800px;
+            animation: fadeIn 1s ease-in-out;
         }
 
-        h2 {
-            text-align: center;
-            margin-bottom: 1.5rem;
+        .form-box h2 {
             font-weight: bold;
-            color: #0277bd;
+            color: #2d3436;
         }
 
-        .form-label i {
-            margin-right: 6px;
-            color: #0288d1;
+        .btn-primary {
+            background: #0984e3;
+            border: none;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: #74b9ff;
+            color: #2d3436;
         }
 
         .form-control {
             border-radius: 10px;
-            padding: 10px;
+            padding: 0.75rem;
         }
 
-        .btn-custom {
-            width: 100%;
-            padding: 10px;
-            font-size: 1.1rem;
-            border-radius: 10px;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
 
 <body>
-    <div class="register-card">
-        <h2><i class="bi bi-person-plus-fill"></i> สมัครสมาชิก</h2>
+    <div class="form-box">
+        <h2 class="text-center mb-4">สมัครสมาชิก</h2>
 
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger">
@@ -103,33 +115,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         <?php endif; ?>
 
-        <form action="" method="post">
-            <div class="mb-3">
-                <label for="username" class="form-label"><i class="bi bi-person-circle"></i>ชื่อผู้ใช้</label>
-                <input type="text" name="username" class="form-control" id="username"
-                    value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>" required>
+        <form method="post" action="">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="username" class="form-label">ชื่อผู้ใช้</label>
+                    <input type="text" name="username" class="form-control" id="username"
+                        value="<?= isset($_POST['username']) ? htmlspecialchars($_POST['username']) : '' ?>"
+                        placeholder="Username" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="fname" class="form-label">ชื่อ-นามสกุล</label>
+                    <input type="text" name="fname" class="form-control" id="fname"
+                        value="<?= isset($_POST['fname']) ? htmlspecialchars($_POST['fname']) : '' ?>"
+                        placeholder="Full Name" required>
+                </div>
             </div>
+
             <div class="mb-3">
-                <label for="fname" class="form-label"><i class="bi bi-card-text"></i>ชื่อ - นามสกุล</label>
-                <input type="text" name="fname" class="form-control" id="fname"
-                    value="<?= isset($_POST['fname']) ? htmlspecialchars($_POST['fname']) : '' ?>" required>
-            </div>
-            <div class="mb-3">
-                <label for="email" class="form-label"><i class="bi bi-envelope-fill"></i>อีเมล</label>
+                <label for="email" class="form-label">อีเมล</label>
                 <input type="email" name="email" class="form-control" id="email"
-                    value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" required>
+                    value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : '' ?>" placeholder="Email"
+                    required>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label"><i class="bi bi-lock-fill"></i>รหัสผ่าน</label>
-                <input type="password" name="password" class="form-control" id="password" required>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="password" class="form-label">รหัสผ่าน</label>
+                    <input type="password" name="password" class="form-control" id="password" placeholder="Password"
+                        required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="cpassword" class="form-label">ยืนยันรหัสผ่าน</label>
+                    <input type="password" name="cpassword" class="form-control" id="cpassword"
+                        placeholder="Confirm Password" required>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="cpassword" class="form-label"><i class="bi bi-shield-lock-fill"></i>ยืนยันรหัสผ่าน</label>
-                <input type="password" name="cpassword" class="form-control" id="cpassword" required>
-            </div>
-            <div class="d-grid gap-2">
-                <button type="submit" class="btn btn-primary btn-custom">สมัครสมาชิก</button>
-                <a href="login.php" class="btn btn-outline-secondary btn-custom">มีบัญชีแล้ว? เข้าสู่ระบบ</a>
+
+            <div class="text-center mt-4">
+                <button type="submit" class="btn btn-primary btn-lg px-5">สมัครสมาชิก</button>
+                <a href="login.php" class="btn btn-outline-secondary btn-lg px-5 ms-2">เข้าสู่ระบบ</a>
             </div>
         </form>
     </div>
